@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <io.github.florent37.shapeofview.shapes.RoundRectView
+        android:id="@+id/roundRectViewNote"
+        style="@style/RoundRectViewRadius2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginHorizontal="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:shape_roundRect_borderColor="@color/colorBlue00"
+        app:shape_roundRect_borderWidth="1dp"
+        >
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            >
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/textViewCity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:text="Ahmedabad"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="20dp"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/imageViewDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/textViewCity"
+                app:layout_constraintBottom_toBottomOf="@+id/textViewCity"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_delete"
+                />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/imageViewEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="@+id/imageViewDelete"
+                app:layout_constraintBottom_toBottomOf="@+id/imageViewDelete"
+                app:layout_constraintEnd_toStartOf="@+id/imageViewDelete"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_edit"
+                />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/textViewAddress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/textViewCity"
+                app:layout_constraintStart_toStartOf="@+id/textViewCity"
+                app:layout_constraintEnd_toEndOf="@+id/imageViewDelete"
+                android:text="The Design of Everyday Things is required reading for anyone who is interested in the user experience. I personally like to reread it every year or two."
+                android:layout_marginTop="15dp"
+                android:textSize="15sp"
+                android:layout_marginEnd="10dp"
+                />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/textViewDistance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/textViewAddress"
+                app:layout_constraintStart_toStartOf="@+id/textViewCity"
+                app:layout_constraintEnd_toEndOf="@+id/imageViewDelete"
+                android:text="Distance is: 330km"
+                android:layout_marginTop="15dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginBottom="20dp"
+                android:textSize="15sp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/black"
+                />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </io.github.florent37.shapeofview.shapes.RoundRectView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
