@@ -13,7 +13,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
     companion object{
         private const val DATABASE_VERSION = 1
         private const val DATABASE_NAME = "address.db"
-        private const val TBL_ADDRESS = "tbl_address"
+        const val TBL_ADDRESS = "tbl_address"
         private const val ID = "id"
         private const val CITY = "city"
         private const val ADDRESS_FILED = "addressFiled"

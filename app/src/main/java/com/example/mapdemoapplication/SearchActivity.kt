@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -43,11 +45,10 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
     private var lat = ""
     private var long = ""
     private var city = ""
-    private var distance = ""
 
     private val permissionCode = 101
 
-    private lateinit var googleMap: GoogleMap
+    private var googleMap: GoogleMap?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +58,10 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
 
         supportActionBar?.hide()
 
-        fetchLocation()
+        //fetchLocation()
+        val supportMapFragment = (supportFragmentManager.findFragmentById(R.id.myMap) as SupportMapFragment?)!!
+        supportMapFragment.getMapAsync(this)
+
         setClick()
         setupPlacesSdk()
         initResultLauncher()
@@ -65,21 +69,10 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
         sqLiteHelper = SQLiteHelper(this)
     }
 
-    private fun fetchLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION) !=
-            PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
-            PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), permissionCode)
-            return
-        }
-
-        val supportMapFragment = (supportFragmentManager.findFragmentById(R.id.myMap) as SupportMapFragment?)!!
-        supportMapFragment.getMapAsync(this)
+    override fun onDestroy() {
+        super.onDestroy()
+        googleMap = null
     }
-
 
     override fun onMapReady(p0: GoogleMap?) {
         if (p0 != null) {
@@ -93,15 +86,17 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         val markerOptions = MarkerOptions().position(latLng).title("I am here!")
-        googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20f))
-        googleMap.addMarker(markerOptions)
+        googleMap?.apply {
+            animateCamera(CameraUpdateFactory.newLatLng(latLng))
+            animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20f))
+            addMarker(markerOptions)
+        }
     }
 
     private fun focusMapOnCoordinates(latitude: Double, longitude: Double) {
         val coordinates = LatLng(latitude, longitude)
         val cameraUpdate = CameraUpdateFactory.newLatLngZoom(coordinates, 20f)
-        googleMap.animateCamera(cameraUpdate)
+        googleMap?.animateCamera(cameraUpdate)
     }
 
     private fun setClick(){
@@ -112,7 +107,6 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
                 val  intent =  Intent()
                 intent.putExtra(IntentKeys.EDITTEXT_VALUE, binding.editTextSelectLocation.text.toString())
                 intent.putExtra(IntentKeys.CITY, city)
-                intent.putExtra(IntentKeys.DISTANCE, distance)
                 intent.putExtra(IntentKeys.LAT, lat)
                 intent.putExtra(IntentKeys.LONG, long)
                 setResult(RESULT_OK, intent)
@@ -136,13 +130,16 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
         if (latitudeStr.isNotEmpty() && longitudeStr.isNotEmpty()) {
             val latitude = latitudeStr.toDouble()
             val longitude = longitudeStr.toDouble()
+
             focusMapOnCoordinates(latitude, longitude)
 
             val latLng = LatLng(latitude,longitude)
             val markerOptions = MarkerOptions().position(latLng).title("I am here!")
-            googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20f))
-            googleMap.addMarker(markerOptions)
+            googleMap?.apply {
+                animateCamera(CameraUpdateFactory.newLatLng(latLng))
+                animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20f))
+                addMarker(markerOptions)
+            }
         }
     }
 
@@ -188,14 +185,13 @@ class SearchActivity : AppCompatActivity(), OnMapReadyCallback {
             lat = it.latitude.toString()
             long = it.longitude.toString()
 
-            //for focus on map location
-            binding.buttonFocus.visibility = View.VISIBLE
-            setFocus()
-
             if (address != null) {
                 city = address.locality
             }
-            distance = "345km"
+
+            //for focus on map location
+            binding.buttonFocus.visibility = View.VISIBLE
+            setFocus()
 
             return address?.getAddressLine(0) ?: (address?.thoroughfare +
                     ", " + address?.subAdminArea +

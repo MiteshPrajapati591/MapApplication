@@ -7,8 +7,8 @@ data class AddressModel(
     var city: String = "",
     var addressFiled: String = "",
     var distance: String = "",
-    var lat: String = "23.0344",
-    var long: String = "72.3678",
+    var lat: String = "",
+    var long: String = "",
     )
 {
 

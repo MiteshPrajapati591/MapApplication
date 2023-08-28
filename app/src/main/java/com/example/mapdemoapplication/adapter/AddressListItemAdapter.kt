@@ -7,13 +7,17 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mapdemoapplication.R
+import com.example.mapdemoapplication.firstName
 import com.example.mapdemoapplication.model.AddressModel
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
-class AddressListItemAdapter(val onEventListener: (view: View, addressModel: AddressModel)->Unit):RecyclerView.Adapter<AddressListItemAdapter.ViewHolder>() {
-
-    var adsList : ArrayList<AddressModel> = ArrayList()
+class AddressListItemAdapter(var adsList : ArrayList<AddressModel>,val onEventListener: (view: View, addressModel: AddressModel)->Unit):RecyclerView.Adapter<AddressListItemAdapter.ViewHolder>() {
 
     fun addItems(items: ArrayList<AddressModel>){
+        this.adsList.clear()
         this.adsList = items
         notifyDataSetChanged()
     }
@@ -49,10 +53,13 @@ class AddressListItemAdapter(val onEventListener: (view: View, addressModel: Add
             textViewCity.text = addressItem.city
             textViewAddress.text = addressItem.addressFiled
 
-            if (pos == 0){
+            if (firstName == adsList[pos].city){
                 textViewDistance.text = "Primary"
             }else{
-                textViewDistance.text = addressItem.distance
+                //textViewDistance.text = "Distance is :".plus(addressItem.distance).plus(" KM")
+                for (i in 0 until adsList.size){
+                    textViewDistance.text = "Distance is :".plus(String.format("%.2f", haversine(addressItem.lat[0].toDouble(), addressItem.long[0].toDouble(),addressItem.lat[i].toDouble(),addressItem.long[i].toDouble()))).toString().plus(" KM")
+                }
             }
         }
 
@@ -65,5 +72,21 @@ class AddressListItemAdapter(val onEventListener: (view: View, addressModel: Add
                 onEventListener(it,adsList[adapterPosition])
             }
         }
+    }
+
+    //find distance
+    fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val r = 6371.0 // Earth's radius in kilometers
+
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return r * c
     }
 }

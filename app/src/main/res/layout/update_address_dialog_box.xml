@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorWhite"
     >
 
     <com.google.android.material.card.MaterialCardView
@@ -78,6 +79,7 @@
                 android:hint="Enter address"
                 app:endIconDrawable="@drawable/ic_baseline_gps"
                 app:endIconMode="custom"
+                android:visibility="gone"
                 app:endIconTint="@color/colorGrey66"
                 app:layout_constraintTop_toBottomOf="@+id/textInputCity"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -97,28 +99,6 @@
             android:cursorVisible="false"
             android:focusable="false"-->
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/textInputDistance"
-                style="@style/AppTheme.InputTextLayout"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginBottom="20dp"
-                android:hint="Enter Distance"
-                app:endIconDrawable="@drawable/ic_baseline_gps"
-                app:layout_constraintTop_toBottomOf="@+id/textInputSelectLocation"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="20dp"
-                app:layout_constraintStart_toStartOf="parent">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextDistance"
-                    style="@style/AppTheme.AppEditText.BorderStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:inputType="textPersonName" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonUpdate"
                 android:layout_width="wrap_content"
@@ -131,7 +111,7 @@
                 app:cornerRadius="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textInputDistance" />
+                app:layout_constraintTop_toBottomOf="@+id/textInputCity" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

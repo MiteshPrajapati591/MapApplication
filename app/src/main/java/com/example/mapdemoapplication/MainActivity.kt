@@ -1,24 +1,37 @@
 package com.example.mapdemoapplication
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import android.location.Address
+import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatImageView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapdemoapplication.adapter.AddressListItemAdapter
-import com.example.mapdemoapplication.model.AddressModel
-import com.example.mapdemoapplication.helper.SQLiteHelper
 import com.example.mapdemoapplication.databinding.ActivityMainBinding
+import com.example.mapdemoapplication.helper.SQLiteHelper
+import com.example.mapdemoapplication.model.AddressModel
 import com.example.mapdemoapplication.utils.IntentKeys
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import java.io.IOException
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+var firstName = ""
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,11 +49,13 @@ class MainActivity : AppCompatActivity() {
 
     private var lat = ""
     private var long = ""
-    private var valuesUpdate = ""
-    private var cityUpdate = ""
-    private var distanceUpdate = ""
 
-    private var isUpdate = false
+    private var firstLat = ""
+    private var firstLong = ""
+
+    var adsList = ArrayList<AddressModel>()
+
+    private var teamData = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,39 +70,71 @@ class MainActivity : AppCompatActivity() {
         getAddress()
         setClick()
 
-        //setupPlacesSdk()
-        //initResultLauncher()
+        setTheAlertData()
+        setupPlacesSdk(false)
     }
 
+    @SuppressLint("Range")
     private fun setClick(){
         binding.buttonAddPOIBottom.setOnClickListener {
-            isUpdate = false
             val i = Intent(this, SearchActivity::class.java)
             startActivityForResult(i, 1)
         }
         binding.buttonAddPOI.setOnClickListener {
-            isUpdate = false
             val i = Intent(this, SearchActivity::class.java)
             startActivityForResult(i, 1)
+        }
+        binding.buttonAscending.setOnClickListener {
+            val data = addressListItemAdapter.adsList.subList(1, addressListItemAdapter.adsList.size)
+            data.sortBy {
+                it.distance
+            }
+            addressListItemAdapter.notifyDataSetChanged()
+        }
+        binding.buttonDescending.setOnClickListener {
+            val data = addressListItemAdapter.adsList.subList(1, addressListItemAdapter.adsList.size)
+            data.sortByDescending {
+                it.distance
+            }
+            addressListItemAdapter.notifyDataSetChanged()
         }
     }
 
     private fun getAddress() {
         val adsList = sqLiteHelper.getAllAddress()
         Log.e("pppp","${adsList.size}")
+        Log.e("pppp","$adsList")
 
         addressListItemAdapter.addItems(adsList)
+
+        if (addressListItemAdapter.adsList.isNotEmpty()){
+            addressListItemAdapter.adsList.first {
+                firstName = it.city
+                true
+            }
+        }
+        addressListItemAdapter.notifyDataSetChanged()
 
         if (adsList.isEmpty()){
             binding.recyclerViewData.visibility = View.GONE
             binding.buttonAddPOIBottom.visibility = View.GONE
             binding.buttonAddPOI.visibility = View.VISIBLE
             binding.textViewMessage.visibility = View.VISIBLE
+            binding.buttonAscending.visibility = View.GONE
+            binding.buttonDescending.visibility = View.GONE
         }else{
             binding.recyclerViewData.visibility = View.VISIBLE
             binding.buttonAddPOIBottom.visibility = View.VISIBLE
             binding.buttonAddPOI.visibility = View.GONE
             binding.textViewMessage.visibility = View.GONE
+            binding.buttonAscending.visibility = View.VISIBLE
+            binding.buttonDescending.visibility = View.VISIBLE
+
+            firstLat = adsList[0].lat
+            firstLong = adsList[0].long
+
+            Log.e("pppp","first lat is $firstLat")
+            Log.e("pppp","first long is $firstLong")
         }
     }
 
@@ -97,16 +144,34 @@ class MainActivity : AppCompatActivity() {
             if (resultCode === RESULT_OK) {
                 values = data?.getStringExtra(IntentKeys.EDITTEXT_VALUE)!!
                 city = data.getStringExtra(IntentKeys.CITY)!!
-                distance = data.getStringExtra(IntentKeys.DISTANCE)!!
                 lat = data.getStringExtra(IntentKeys.LAT)!!
                 long = data.getStringExtra(IntentKeys.LONG)!!
                 if (values.isNotEmpty()){
-                    //binding.textViewAddress.text = values
+                    distance = if (addressListItemAdapter.adsList.isNotEmpty()){
+                        String.format("%.2f", haversine(addressListItemAdapter.adsList[0].lat.toDouble(), addressListItemAdapter.adsList[0].long.toDouble(),lat.toDouble(),long.toDouble()))
+                    }else{
+                        "345"
+                    }
                     addAddress(city,values,distance,lat,long)
                 }
-
             }
         }
+    }
+
+    //find distance
+    private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val r = 6371.0 // Earth's radius in kilometers
+
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return r * c
     }
 
     private fun addAddress(mCity: String, mAddress: String, mDistance: String, mLat: String, mLong: String) {
@@ -125,7 +190,6 @@ class MainActivity : AppCompatActivity() {
             //check insert success or not
             if (status > -1){
                 Toast.makeText(this, "Address Added...", Toast.LENGTH_SHORT).show()
-                //notify recyclerView here
                 getAddress()
             }else{
                 Toast.makeText(this, "record not saved", Toast.LENGTH_SHORT).show()
@@ -136,22 +200,16 @@ class MainActivity : AppCompatActivity() {
     private fun setRecyclerViewAddress() {
         binding.recyclerViewData.setHasFixedSize(true)
         binding.recyclerViewData.layoutManager = LinearLayoutManager(this)
-        addressListItemAdapter = AddressListItemAdapter(onEventListener = {view, addressModel ->
+        addressListItemAdapter = AddressListItemAdapter(adsList,onEventListener = {view, addressModel ->
+           // firstLat = addressModel.lat
             when(view.id){
                 R.id.imageViewEdit->{
-
-                    /*isUpdate = true
-                    val i = Intent(this, SearchActivity::class.java)
-                    i.putExtra("UPDATE",true)
-                    i.putExtra("ADDRESS",addressModel.addressFiled)
-                    i.putExtra("CITY",addressModel.city)
-                    i.putExtra("ID",addressModel.id)
-                    startActivity(i)*/
-
-                    routeDialog()
+                    teamData = "123"
+                    setupPlacesSdk(true)
                     ads = addressModel
                 }
                 R.id.imageViewDelete->{
+                    firstName = " "
                     deleteAddress(addressModel.id)
                 }
             }
@@ -159,10 +217,12 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerViewData.adapter = addressListItemAdapter
     }
 
-    private fun updateAddress(mCity: String, mAddressFiled: String, mDistance: String){
+    private fun updateAddress(mCity: String, mAddressFiled: String, mDistance: String, mLat: String, mLong: String){
         val city = mCity
         val addressFiled = mAddressFiled
         val distance = mDistance
+        val lat = mLat
+        val long = mLong
 
         //check record not change
         if (city == ads?.city && addressFiled == ads?.addressFiled){
@@ -182,78 +242,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun routeDialog() {
-        val dialog = AlertDialog.Builder(this)
-        val dialogViewToken = layoutInflater.inflate(R.layout.update_address_dialog_box, null)
-        val buttonUpdate: MaterialButton = dialogViewToken.findViewById(R.id.buttonUpdate) as MaterialButton
-        val imageViewClose: AppCompatImageView = dialogViewToken.findViewById(R.id.imageViewDialogClose) as AppCompatImageView
-        val editTextSelectLocation: TextInputEditText = dialogViewToken.findViewById(R.id.editTextSelectLocation) as TextInputEditText
-        val editTextCity: TextInputEditText = dialogViewToken.findViewById(R.id.editTextCity) as TextInputEditText
-        val editTextDistance: TextInputEditText = dialogViewToken.findViewById(R.id.editTextDistance) as TextInputEditText
-        dialog.setView(dialogViewToken)
-        dialog.setCancelable(true)
-
-        val customDialog = dialog.create()
-        customDialog.show()
-        customDialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-        buttonUpdate.setOnClickListener {
-            //updateAddress("cityUpdate",editTextSelectLocation.text.toString(),"distanceUpdate")
-            updateAddress(editTextCity.text.toString(),editTextSelectLocation.text.toString(),editTextDistance.text.toString())
-            customDialog.dismiss()
-        }
-
-        imageViewClose.setOnClickListener {
-            customDialog.dismiss()
-        }
-    }
-
-    private fun deleteAddress(id: Int){
-        if (id == null) return
-
-        val builder = AlertDialog.Builder(this)
-        builder.setMessage("Are you sure you want to delete address?")
-        builder.setCancelable(true)
-        builder.setPositiveButton("Yes"){dialoag,_->
-            sqLiteHelper.deleteAddressById(id)
-            getAddress()
-            dialoag.dismiss()
-        }
-        builder.setNegativeButton("No"){dialoag,_->
-            dialoag.dismiss()
-        }
-
-        val alert = builder.create()
-        alert.show()
-
-    }
-
-
-    //find distance
-    private fun distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val theta = lon1 - lon2
-        var dist = (Math.sin(deg2rad(lat1))
-                * Math.sin(deg2rad(lat2))
-                + (Math.cos(deg2rad(lat1))
-                * Math.cos(deg2rad(lat2))
-                * Math.cos(deg2rad(theta))))
-        dist = Math.acos(dist)
-        dist = rad2deg(dist)
-        dist = dist * 60 * 1.1515
-        return dist
-    }
-
-    private fun deg2rad(deg: Double): Double {
-        return deg * Math.PI / 180.0
-    }
-
-    private fun rad2deg(rad: Double): Double {
-        return rad * 180.0 / Math.PI
-    }
-
-
-    // for location
-    /*private fun setupPlacesSdk(editTextSelectLocation: TextInputEditText) {
+    private fun setupPlacesSdk(isCurrent: Boolean) {
         Places.initialize(
             applicationContext,
             this.getString(R.string.google_map_key)
@@ -269,21 +258,33 @@ class MainActivity : AppCompatActivity() {
         val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
             .build(this)
 
-        editTextSelectLocation.setOnClickListener {
+        if (isCurrent){
             locationResultLauncher.launch(intent)
         }
     }
 
-    private fun initResultLauncher() {
-        locationResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    /**
+     * here i set the functiion
+     * */
+    private fun setTheAlertData() {
+        locationResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 if (it.resultCode == Activity.RESULT_OK) {
                     it.data?.let { data ->
-                        val place = Autocomplete.getPlaceFromIntent(data)
-                        valuesUpdate = setAddress(place.latLng)
-                        Log.d("TAG", "address is: ${setAddress(place.latLng)}")
+                        if (teamData != ""){
+                            val place = Autocomplete.getPlaceFromIntent(data)
+                            setAddress(place.latLng)
+                            distance = if (addressListItemAdapter.adsList.isNotEmpty()) {
+                                String.format(
+                                    "%.2f",
+                                    haversine(addressListItemAdapter.adsList[0].lat.toDouble(), addressListItemAdapter.adsList[0].long.toDouble(), place.latLng.latitude,place.latLng.longitude
+                                    )
+                                )
+                            } else {
+                                "345"
+                            }
+                            updateAddress(city, setAddress(place.latLng), distance, lat, long)
+                        }
                     }
-
                 }
             }
     }
@@ -293,10 +294,10 @@ class MainActivity : AppCompatActivity() {
             val address = getAddressFromLatLng(this, it.latitude, it.longitude)
             lat = it.latitude.toString()
             long = it.longitude.toString()
+
             if (address != null) {
-                cityUpdate = address.locality
+                city = address.locality
             }
-            distanceUpdate = "350km"
 
             return address?.getAddressLine(0) ?: (address?.thoroughfare +
                     ", " + address?.subAdminArea +
@@ -322,6 +323,27 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
         return null
-    }*/
+    }
+
+
+    private fun deleteAddress(id: Int){
+        if (id == null) return
+
+        val builder = AlertDialog.Builder(this)
+        builder.setMessage("Are you sure you want to delete address?")
+        builder.setCancelable(true)
+        builder.setPositiveButton("Yes"){dialoag,_->
+            sqLiteHelper.deleteAddressById(id)
+            getAddress()
+            dialoag.dismiss()
+        }
+        builder.setNegativeButton("No"){dialoag,_->
+            dialoag.dismiss()
+        }
+
+        val alert = builder.create()
+        alert.show()
+
+    }
 
 }
